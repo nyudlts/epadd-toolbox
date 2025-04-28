@@ -2,6 +2,7 @@ package edu.nyu.dlts;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -19,16 +20,33 @@ import javafx.scene.text.Text;
 
 public class EPADDSwitchController {
     
-    private String propertiesLocation = "C:\\Users\\dm3053\\epadd.properties";
+    private String propertiesLocation;
     private EPADDProperties properties = new EPADDProperties();
     private ObservableList<String> modeValues = FXCollections.observableArrayList("appraisal", "processing", "delivery", "discovery");
     
     @FXML
     protected void initialize() {
-        readProperties();
-        loadModeComboBox();
-        setBaseDirField();
-        setAdmin();
+        String username = System.getProperty("user.name");
+        propertiesLocation = "C:\\Users\\" + username + "\\epadd.properties";
+        Boolean propsExists = new File(propertiesLocation).exists();
+        if(propsExists == false) {
+            output.append("* properties files: " + propertiesLocation + " does not exist.\n");
+            resultOutput.setText(output.toString());    
+        } else {
+            output.append("* properties file exists: " + propertiesLocation+ "\n");
+            resultOutput.setText(output.toString());
+            Exception e = readProperties();
+            if(e != null) {
+                output.append("* error loading properties file:"+  e.getMessage() + "\n");
+                resultOutput.setText(output.toString());
+            } else {
+                output.append("* properties file loaded\n");
+                resultOutput.setText(output.toString());
+                loadModeComboBox();
+                setBaseDirField();
+                setAdmin();
+            }
+        }
     }
 
     @FXML
@@ -57,8 +75,10 @@ public class EPADDSwitchController {
         adminEmail.setText(adminSplit[1].trim());
     }
 
-    private void readProperties() {
-        System.out.println("opening properties files at: " + propertiesLocation);
+    private Exception readProperties() {
+        output.append("* opening properties files at: " + propertiesLocation + "\n");
+        resultOutput.setText(output.toString());
+
         try {
             BufferedReader reader = new BufferedReader(new FileReader(propertiesLocation));
             String line;
@@ -69,11 +89,10 @@ public class EPADDSwitchController {
                 }
             }
             reader.close();
+            return null;
         } catch(Exception e) {
-            System.out.println(e);
-            System.exit(1);
-        }
-        
+            return e;
+        }    
     }
 
     @FXML
@@ -87,41 +106,41 @@ public class EPADDSwitchController {
     @FXML
     protected void updatePropertiesFile() {
         //backup the properties file
-        output.append("backing up properties file\n");
+        output.append("* backing up properties file\n");
         resultOutput.setText(output.toString());
         IOException e = backupPropertiesFile();
         if(e != null) {
-            output.append("error backing up file\n" + e.getMessage() + "\n");
+            output.append("* error backing up file\n" + e.getMessage() + "\n");
             resultOutput.setText(output.toString());
         } else {
-            output.append("properties file backed up\n");
+            output.append("* properties file backed up\n");
             resultOutput.setText(output.toString());
         }
 
         //serialize the properties file
-        output.append("serializing properties\n");
+        output.append("* serializing properties\n");
         resultOutput.setText(output.toString());
         String fileOutput = serializeProperties();
-        output.append("properties file serialized\n");
+        output.append("* properties file serialized\n");
         resultOutput.setText(output.toString());
 
         //write properties file
-        output.append("wrting properties file to " + propertiesLocation + "\n");
+        output.append("* writing properties file to " + propertiesLocation + "\n");
         resultOutput.setText(output.toString());
         e = writePropertiesFile(fileOutput);
         if(e != null) {
-            output.append("error updating properties file\n" + e.getMessage() + "\n");
+            output.append("* error updating properties file\n" + e.getMessage() + "\n");
             resultOutput.setText(output.toString());
         } else {
-            output.append("properties file written\n");
+            output.append("* properties file written\n");
             resultOutput.setText(output.toString());
         }
 
-        output.append("properties file update complete\n");
+        output.append("* properties file update complete\n");
         resultOutput.setText(output.toString());
 
         //reload properties file:
-        output.append("reloading properties\n");
+        output.append("* reloading properties\n");
         resultOutput.setText(output.toString());
         readProperties();
 
@@ -137,17 +156,14 @@ public class EPADDSwitchController {
     }
 
     private IOException backupPropertiesFile() {
-        File propertiesFile = new File(propertiesLocation);
-        Boolean exists = propertiesFile.exists();
-        output.append("properties file exists: " + exists + "\n");
+
         resultOutput.setText(output.toString());
         Path source = Paths.get(propertiesLocation);
         Path destination = Paths.get(propertiesLocation);
         String epaddDirectory = baseDir.getText().replaceAll("\\\\\\\\", "\\\\");
         destination = Paths.get(epaddDirectory + "\\" + destination.getFileName() + "-bk0");
-        output.append("backing up " + source.toString() + "\nto " + destination.toString() + "\n");
+        output.append("* backing up " + source.toString() + "\n  to " + destination.toString() + "\n");
         resultOutput.setText(output.toString());
-        
         try {
             Files.copy(source, destination, StandardCopyOption.REPLACE_EXISTING);
             return null;
