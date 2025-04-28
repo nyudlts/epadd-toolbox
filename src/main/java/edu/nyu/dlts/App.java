@@ -15,7 +15,7 @@ public class App extends Application {
     @Override
     public void start(Stage stage) throws IOException {
         scene = new Scene(loadFXML("epaddSwitch"), 640, 640);
-        stage.setTitle("ePADD switcher");
+        stage.setTitle("ePADD Toolbox");
         stage.setScene(scene);
         stage.show();
     }
